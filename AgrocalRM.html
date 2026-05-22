@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroCalc - Ramón Macías</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --primary: #2e7d32;
+            --primary-light: #4caf50;
+            --accent: #ff9800;
+            --text: #ffffff;
+            --text-muted: #b0bec5;
+            --border: #333333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--primary-light);
+            margin-bottom: 15px;
+        }
+
+        .header-title {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            margin: 0;
+            color: #ffffff;
+        }
+
+        .header-title span {
+            color: var(--accent);
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: var(--primary-light);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        h2 { font-size: 18px; margin-top: 0; color: var(--primary-light); }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: #2c2c2c;
+            border: none;
+            color: var(--text-muted);
+            font-weight: bold;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: #2a2a2a;
+            border: 1px solid var(--border);
+            color: white;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-light);
+            outline: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover { background: #1b5e20; }
+        .btn-danger { background: #d32f2f; }
+        .btn-danger:hover { background: #b71c1c; }
+        .btn-accent { background: var(--accent); color: black; }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .product-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.5fr auto;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+            background: #252525;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .remove-btn {
+            background: #d32f2f;
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .result-box {
+            background: #252525;
+            border-left: 4px solid var(--primary-light);
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .result-box.partial {
+            border-left-color: var(--accent);
+        }
+
+        ul { padding-left: 20px; margin: 5px 0; }
+        li { margin-bottom: 8px; font-size: 16px; }
+        
+        .converted-gal {
+            color: #81c784;
+            font-size: 13px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .original-dose {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .history-item {
+            background: #252525;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .history-title {
+            font-weight: bold;
+            color: var(--primary-light);
+        }
+
+        .history-date {
+            color: var(--text-muted);
+        }
+
+        .history-notes {
+            background: #1e1e1e;
+            padding: 8px 10px;
+            border-left: 3px solid var(--accent);
+            margin: 8px 0;
+            font-size: 14px;
+            color: #e0e0e0;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="header-title">RAMÓN <span>MACÍAS</span></div>
+        <div class="subtitle">AGROCALC SYSTEM</div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('mezcla')">Nueva Mezcla</button>
+        <button class="tab-btn" onclick="switchTab('bodega')">📦 Bodega</button>
+        <button class="tab-btn" onclick="switchTab('historial')">📜 Historial</button>
+    </div>
+
+    <div id="panel-mezcla" class="panel active">
+        <div class="card">
+            <h2>1. Datos del Lote</h2>
+            <div class="form-group">
+                <label>Acres Totales del Lote:</label>
+                <input type="number" id="lote-acres" step="any" placeholder="Ej. 443" oninput="saveCurrentState()">
+            </div>
+            <div class="row">
+                <div class="form-group" style="flex: 1;">
+                    <label>Tamaño Tanque (gal):</label>
+                    <input type="number" id="tanque-gal" step="any" placeholder="Ej. 1600" oninput="saveCurrentState()">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Gasto (gal/acre):</label>
+                    <input type="number" id="gasto-acre" step="any" placeholder="Ej. 15" oninput="saveCurrentState()">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Notas de Aplicación / Campos Tratados:</label>
+                <textarea id="lote-notes" rows="2" placeholder="Ej. Lotes treated 56 y 45, maíz Silage..." oninput="saveCurrentState()"></textarea>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>2. Productos en la Mezcla</h2>
+            <div id="lista-productos-mezcla">
+                </div>
+            <button class="btn btn-accent" style="margin-top: 10px;" onclick="agregarFilaProducto()">+ Añadir Producto</button>
+        </div>
+
+        <button class="btn" onclick="calcularReceta()">Calcular Receta</button>
+        <button class="btn btn-danger" onclick="resetFormulario()">Resetear Pantalla</button>
+
+        <div id="resultados" style="display: none; margin-top: 20px;">
+            <div class="card">
+                <h2>📋 Resultados del Cálculo</h2>
+                <div id="res-generales"></div>
+                
+                <div class="result-box">
+                    <h3>Receta por Tanque LLENO</h3>
+                    <ul id="receta-lleno"></ul>
+                </div>
+
+                <div class="result-box partial" id="box-parcial" style="display: none;">
+                    <h3>Receta Tanque PARCIAL</h3>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label style="color: var(--accent);">⚙️ Ajustar agua final si prefieres que sobre:</label>
+                        <div class="row">
+                            <input type="number" id="agua-parcial-manual" style="border-color: var(--accent);" oninput="recalcularParcialManual()">
+                            <span style="align-self: center; font-weight: bold;">gal</span>
+                        </div>
+                    </div>
+                    <ul id="receta-parcial"></ul>
+                </div>
+                
+                <button class="btn btn-accent" style="margin-top: 15px;" onclick="guardarEnHistorial()">Guardar en Historial</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-bodega" class="panel">
+        <div class="card">
+            <h2>📦 Registro de Bodega Virtual</h2>
+            <div class="form-group">
+                <label>Nombre del Producto:</label>
+                <input type="text" id="bodega-nombre" placeholder="Ej. ENVY">
+            </div>
+            <button class="btn" onclick="guardarEnBodega()">Guardar en Bodega</button>
+        </div>
+
+        <div class="card">
+            <h2>Productos Guardados</h2>
+            <ul id="lista-bodega" style="list-style: none; padding: 0;"></ul>
+        </div>
+    </div>
+
+    <div id="panel-historial" class="panel">
+        <div class="card">
+            <h2>📜 Historial de Aplicaciones</h2>
+            <button class="btn btn-danger" onclick="borrarHistorial()">Borrar Todo el Historial</button>
+            <div id="lista-historial"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let bodega = JSON.parse(localStorage.getItem('agro_bodega')) || ["Ammonium Sulfate", "ENVY", "Callisto", "Crop Oil Conc", "Outlook", "Request", "Induce", "AIM EC", "Resolve Q"];
+    let historial = JSON.parse(localStorage.getItem('agro_historial')) || [];
+
+    const unidades = ["oz/acre", "lb/acre", "qt/acre", "gal/acre", "lb/100gal", "gal/100gal", "qt/100gal"];
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('panel-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        if(tabId === 'bodega') renderBodega();
+        if(tabId === 'historial') renderHistorial();
+    }
+
+    function renderBodega() {
+        const lista = document.getElementById('lista-bodega');
+        lista.innerHTML = '';
+        bodega.forEach((prod, index) => {
+            lista.innerHTML += `<li style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                <span>${prod}</span>
+                <button class="remove-btn" style="padding:4px 8px;" onclick="eliminarDeBodega(${index})">X</button>
+            </li>`;
+        });
+    }
+
+    function guardarEnBodega() {
+        const nom = document.getElementById('bodega-nombre').value.trim();
+        if(!nom) return;
+        if(!bodega.includes(nom)) {
+            bodega.push(nom);
+            localStorage.setItem('agro_bodega', JSON.stringify(bodega));
+            document.getElementById('bodega-nombre').value = '';
+            renderBodega();
+            actualizarSelectsProductos();
+        }
+    }
+
+    function eliminarDeBodega(index) {
+        bodega.splice(index, 1);
+        localStorage.setItem('agro_bodega', JSON.stringify(bodega));
+        renderBodega();
+        actualizarSelectsProductos();
+    }
+
+    function actualizarSelectsProductos() {
+        document.querySelectorAll('.prod-select').forEach(select => {
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- Selecciona --</option>';
+            bodega.forEach(p => {
+                select.innerHTML += `<option value="${p}">${p}</option>`;
+            });
+            select.value = currentVal;
+        });
+    }
+
+    function agregarFilaProducto(prodGuardado = '', dosisGuardada = '', unidadGuardada = '') {
+        const contenedor = document.getElementById('lista-productos-mezcla');
+        const id = Date.now() + Math.random();
+        
+        let opcionesBodega = bodega.map(p => `<option value="${p}" ${p === prodGuardado ? 'selected' : ''}>${p}</option>`).join('');
+        let opcionesUnidades = unidades.map(u => `<option value="${u}" ${u === unidadGuardada ? 'selected' : ''}>${u}</option>`).join('');
+
+        const html = `
+            <div class="product-row" id="row-${id}">
+                <select class="prod-select" onchange="saveCurrentState()">${opcionesBodega}</select>
+                <input type="number" step="any" placeholder="Dosis" value="${dosisGuardada}" oninput="saveCurrentState()">
+                <select onchange="saveCurrentState()">${opcionesUnidades}</select>
+                <button class="remove-btn" onclick="document.getElementById('row-${id}').remove(); saveCurrentState();">X</button>
+            </div>
+        `;
+        contenedor.insertAdjacentHTML('beforeend', html);
+    }
+
+    function saveCurrentState() {
+        const estado = {
+            acres: document.getElementById('lote-acres').value,
+            tanque: document.getElementById('tanque-gal').value,
+            gasto: document.getElementById('gasto-acre').value,
+            notes: document.getElementById('lote-notes').value,
+            productos: []
+        };
+
+        document.querySelectorAll('.product-row').forEach(row => {
+            const inputs = row.querySelectorAll('input, select');
+            if(inputs.length >= 3) {
+                estado.productos.push({
+                    nombre: inputs[0].value,
+                    dosis: inputs[1].value,
+                    unidad: inputs[2].value
+                });
+            }
+        });
+
+        localStorage.setItem('agro_cache_mezcla', JSON.stringify(estado));
+    }
+
+    function cargarEstadoGuardado() {
+        const cache = JSON.parse(localStorage.getItem('agro_cache_mezcla'));
+        if(!cache) {
+            agregarFilaProducto();
+            return;
+        }
+        document.getElementById('lote-acres').value = cache.acres || '';
+        document.getElementById('tanque-gal').value = cache.tanque || '';
+        document.getElementById('gasto-acre').value = cache.gasto || '';
+        document.getElementById('lote-notes').value = cache.notes || '';
+        
+        if(cache.productos && cache.productos.length > 0) {
+            cache.productos.forEach(p => {
+                agregarFilaProducto(p.nombre, p.dosis, p.unidad);
+            });
+        } else {
+            agregarFilaProducto();
+        }
+    }
+
+    function resetFormulario() {
+        if(confirm("¿Seguro que quieres borrar los datos de la pantalla actual?")) {
+            localStorage.removeItem('agro_cache_mezcla');
+            document.getElementById('lote-acres').value = '';
+            document.getElementById('tanque-gal').value = '';
+            document.getElementById('gasto-acre').value = '';
+            document.getElementById('lote-notes').value = '';
+            document.getElementById('lista-productos-mezcla').innerHTML = '';
+            document.getElementById('resultados').style.display = 'none';
+            agregarFilaProducto();
+        }
+    }
+
+    function obtenerConversionAGalones(cantidad, unidadOriginal) {
+        if (unidadOriginal === "oz") {
+            return ` (${ (cantidad / 128).toFixed(2) } gal)`;
+        } else if (unidadOriginal === "qt") {
+            return ` (${ (cantidad / 4).toFixed(2) } gal)`;
+        }
+        return '';
+    }
+
+    let calculadoLlenoGlobal = []; 
+    let calculadoParcialGlobal = [];
+    let acresTotalesGlobal = 0;
+    let gastoGlobal = 0;
+    let resumenGeneralGlobal = "";
+
+    function calcularReceta() {
+        const acres = parseFloat(document.getElementById('lote-acres').value);
+        const tanque = parseFloat(document.getElementById('tanque-gal').value);
+        const gasto = parseFloat(document.getElementById('gasto-acre').value);
+
+        if(!acres || !tanque || !gasto) {
+            alert("Por favor llena los datos del lote, tanque y gasto de agua.");
+            return;
+        }
+
+        acresTotalesGlobal = acres;
+        gastoGlobal = gasto;
+
+        const acresPorTanque = tanque / gasto;
+        const tanquesNecesarios = acres / acresPorTanque;
+        const tanquesLlenosEnteros = Math.floor(tanquesNecesarios);
+        const acresRestantes = acres - (tanquesLlenosEnteros * acresPorTanque);
+        const aguaParcialTeorica = acresRestantes * gasto;
+
+        resumenGeneralGlobal = `Cargas: ${tanquesNecesarios.toFixed(2)} (${tanquesLlenosEnteros} llenos, residual para ${acresRestantes.toFixed(2)} ac). Gasto: ${gasto} gal/ac.`;
+
+        let genHTML = `
+            <p>• Un tanque lleno cubre: <b>${acresPorTanque.toFixed(2)} acres</b></p>
+            <p>• Cargas necesarias: <b>${tanquesNecesarios.toFixed(2)} tanques</b></p>
+            <p>• Esto equivale a: <b>${tanquesLlenosEnteros} tanque(s) lleno(s)</b></p>
+        `;
+        
+        if(acresRestantes > 0) {
+            genHTML += `<p>• Último tanque parcial cubrirá: <b>${acresRestantes.toFixed(2)} acres</b> (Agua exacta necesaria: <b>${aguaParcialTeorica.toFixed(1)} gal</b>)</p>`;
+            document.getElementById('box-parcial').style.display = 'block';
+            document.getElementById('agua-parcial-manual').value = Math.ceil(aguaParcialTeorica); 
+        } else {
+            document.getElementById('box-parcial').style.display = 'none';
+        }
+        document.getElementById('res-generales').innerHTML = genHTML;
+
+        const ulLleno = document.getElementById('receta-lleno');
+        ulLleno.innerHTML = '';
+        calculadoLlenoGlobal = [];
+
+        const filas = document.querySelectorAll('.product-row');
+        filas.forEach(row => {
+            const inputs = row.querySelectorAll('input, select');
+            const nombre = inputs[0].value;
+            const dosis = parseFloat(inputs[1].value);
+            const unidad = inputs[2].value;
+
+            if(!nombre || isNaN(dosis)) return;
+
+            let cantLleno = 0;
+            if(unidad.includes("acre")) {
+                cantLleno = dosis * acresPorTanque;
+            } else if(unidad.includes("100gal")) {
+                cantLleno = dosis * (tanque / 100);
+            }
+
+            let unidadBase = unidad.split('/')[0];
+            let stringGalones = obtenerConversionAGalones(cantLleno, unidadBase);
+
+            ulLleno.innerHTML += `<li><b>${nombre}:</b> ${cantLleno.toFixed(2)} ${unidadBase}<span class="converted-gal">${stringGalones}</span> <span class="original-dose">(${dosis} ${unidad})</span></li>`;
+            
+            calculadoLlenoGlobal.push({ nombre, dosis, unidad, unidadBase, cantLleno, stringGalones });
+        });
+
+        recalcularParcialManual();
+        document.getElementById('resultados').style.display = 'block';
+    }
+
+    function recalcularParcialManual() {
+        const aguaManual = parseFloat(document.getElementById('agua-parcial-manual').value);
+        const ulParcial = document.getElementById('receta-parcial');
+        ulParcial.innerHTML = '';
+        calculadoParcialGlobal = [];
+
+        if(isNaN(aguaManual) || aguaManual <= 0) return;
+        const acresAjustados = aguaManual / gastoGlobal;
+
+        calculadoLlenoGlobal.forEach(p => {
+            let cantParcial = 0;
+            if(p.unidad.includes("acre")) {
+                cantParcial = p.dosis * acresAjustados;
+            } else if(p.unidad.includes("100gal")) {
+                cantParcial = p.dosis * (aguaManual / 100);
+            }
+            
+            let stringGalones = obtenerConversionAGalones(cantParcial, p.unidadBase);
+            ulParcial.innerHTML += `<li><b>${p.nombre}:</b> ${cantParcial.toFixed(2)} ${p.unidadBase}<span class="converted-gal">${stringGalones}</span></li>`;
+            
+            calculadoParcialGlobal.push({ nombre: p.nombre, cantParcial, unidadBase: p.unidadBase, stringGalones });
+        });
+    }
+
+    function guardarEnHistorial() {
+        const acres = document.getElementById('lote-acres').value;
+        const tanque = document.getElementById('tanque-gal').value;
+        const notes = document.getElementById('lote-notes').value.trim();
+        const fecha = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        if(!acres) return;
+
+        let resumenLlenoHTML = calculadoLlenoGlobal.map(p => `<li>${p.nombre}: <b>${p.cantLleno.toFixed(2)} ${p.unidadBase}</b>${p.stringGalones ? `<span style="color:#81c784; font-weight:bold;">${p.stringGalones}</span>` : ''} <span style="font-size:11px; color:#aaa;">(${p.dosis} ${p.unidad})</span></li>`).join('');
+        
+        let resumenParcialHTML = '';
+        if(document.getElementById('box-parcial').style.display === 'block') {
+            let aguaAjustada = document.getElementById('agua-parcial-manual').value;
+            let subProductos = calculadoParcialGlobal.map(p => `<li>${p.nombre}: <b>${p.cantParcial.toFixed(2)} ${p.unidadBase}</b>${p.stringGalones ? `<span style="color:#81c784; font-weight:bold;">${p.stringGalones}</span>` : ''}</li>`).join('');
+            resumenParcialHTML = `
+                <div style="margin-top:8px; border-left:3px solid var(--accent); padding-left:8px;">
+                    <span style="color:var(--accent); font-size:13px; font-weight:bold;">Tanque Parcial (Agua: ${aguaAjustada} gal):</span>
+                    <ul style="font-size:13px; margin:3px 0;">${subProductos}</ul>
+                </div>
+            `;
+        }
+
+        const registroHTML = `
+            <div class="history-item">
+                <div class="history-header">
+                    <span class="history-title">🚜 Lote de ${acres} ac (${tanque} gal)</span>
+                    <span class="history-date">${fecha}</span>
+                </div>
+                <div style="font-size:13px; color:#bbb; font-style:italic;">${resumenGeneralGlobal}</div>
+                <div class="history-notes">📝 <b>Notas:</b> ${notes || "Sin notas de campo."}</div>
+                <div style="margin-top:8px; border-left:3px solid var(--primary-light); padding-left:8px;">
+                    <span style="color:var(--primary-light); font-size:13px; font-weight:bold;">Tanque Lleno:</span>
+                    <ul style="font-size:13px; margin:3px 0;">${resumenLlenoHTML}</ul>
+                </div>
+                ${resumenParcialHTML}
+            </div>
+        `;
+
+        historial.unshift(registroHTML);
+        localStorage.setItem('agro_historial_html', JSON.stringify(historial));
+        alert("¡Receta guardada con éxito!");
+    }
+
+    function renderHistorial() {
+        const div = document.getElementById('lista-historial');
+        div.innerHTML = '';
+        if(historial.length === 0) {
+            div.innerHTML = '<p>No hay recetas guardadas todavía.</p>';
+            return;
+        }
+        historial.forEach(itemHtml => {
+            div.insertAdjacentHTML('beforeend', itemHtml);
+        });
+    }
+
+    function borrarHistorial() {
+        if(confirm("¿Seguro que quieres borrar todo el historial?")) {
+            historial = [];
+            localStorage.setItem('agro_historial_html', JSON.stringify(historial));
+            renderHistorial();
+        }
+    }
+
+    window.onload = function() {
+        // Cargar historial de forma segura
+        historial = JSON.parse(localStorage.getItem('agro_historial_html')) || [];
+        cargarEstadoGuardado();
+    };
+</script>
+</body>
+</html>
