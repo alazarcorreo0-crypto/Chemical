@@ -146,7 +146,7 @@
 
         .product-row {
             display: grid;
-            grid-template-columns: 2fr 1fr 1.5fr auto;
+            grid-template-columns: 1.8fr 1fr 1.7fr auto;
             gap: 8px;
             align-items: center;
             margin-bottom: 10px;
@@ -239,9 +239,9 @@
     </header>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('mezcla')">Nueva Mezcla</button>
-        <button class="tab-btn" onclick="switchTab('bodega')">📦 Bodega</button>
-        <button class="tab-btn" onclick="switchTab('historial')">📜 Historial</button>
+        <button class="tab-btn active" onclick="switchTab('mezcla', event)">Nueva Mezcla</button>
+        <button class="tab-btn" onclick="switchTab('bodega', event)">📦 Bodega</button>
+        <button class="tab-btn" onclick="switchTab('historial', event)">📜 Historial</button>
     </div>
 
     <div id="panel-mezcla" class="panel active">
@@ -269,8 +269,7 @@
 
         <div class="card">
             <h2>2. Productos en la Mezcla</h2>
-            <div id="lista-productos-mezcla">
-                </div>
+            <div id="lista-productos-mezcla"></div>
             <button class="btn btn-accent" style="margin-top: 10px;" onclick="agregarFilaProducto()">+ Añadir Producto</button>
         </div>
 
@@ -331,15 +330,23 @@
 
 <script>
     let bodega = JSON.parse(localStorage.getItem('agro_bodega')) || ["Ammonium Sulfate", "ENVY", "Callisto", "Crop Oil Conc", "Outlook", "Request", "Induce", "AIM EC", "Resolve Q"];
-    let historial = JSON.parse(localStorage.getItem('agro_historial')) || [];
+    let historial = JSON.parse(localStorage.getItem('agro_historial_html')) || [];
 
-    const unidades = ["oz/acre", "lb/acre", "qt/acre", "gal/acre", "lb/100gal", "gal/100gal", "qt/100gal"];
+    // Lista idéntica a la pantalla del QuickDraw Spray Tender System
+    const unidades = [
+        "GAL/Ac", "fl. Oz/Ac", "Pt/Ac", "Qt/Ac", "lbs/Ac dry", "L/Ac", "mL/Ac",
+        "lbs/100", "Pt/100", "Qt/100", "GAL/100", "Oz/Ac dry", "g/Ac", "kg/Ac",
+        "g/100", "kg/100", "mL/100", "L/100"
+    ];
 
-    function switchTab(tabId) {
+    function switchTab(tabId, event) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('panel-' + tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
+        
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+        }
         if(tabId === 'bodega') renderBodega();
         if(tabId === 'historial') renderHistorial();
     }
@@ -394,7 +401,7 @@
 
         const html = `
             <div class="product-row" id="row-${id}">
-                <select class="prod-select" onchange="saveCurrentState()">${opcionesBodega}</select>
+                <select class="prod-select" onchange="saveCurrentState()"><option value="">-- Selecciona --</option>${opcionesBodega}</select>
                 <input type="number" step="any" placeholder="Dosis" value="${dosisGuardada}" oninput="saveCurrentState()">
                 <select onchange="saveCurrentState()">${opcionesUnidades}</select>
                 <button class="remove-btn" onclick="document.getElementById('row-${id}').remove(); saveCurrentState();">X</button>
@@ -414,7 +421,7 @@
 
         document.querySelectorAll('.product-row').forEach(row => {
             const inputs = row.querySelectorAll('input, select');
-            if(inputs.length >= 3) {
+            if(inputs.length >= 3 && inputs[0].value !== "") {
                 estado.productos.push({
                     nombre: inputs[0].value,
                     dosis: inputs[1].value,
@@ -428,6 +435,8 @@
 
     function cargarEstadoGuardado() {
         const cache = JSON.parse(localStorage.getItem('agro_cache_mezcla'));
+        document.getElementById('lista-productos-mezcla').innerHTML = '';
+        
         if(!cache) {
             agregarFilaProducto();
             return;
@@ -459,11 +468,23 @@
         }
     }
 
-    function obtenerConversionAGalones(cantidad, unidadOriginal) {
-        if (unidadOriginal === "oz") {
+    // Traduce cualquier unidad líquida o seca a su equivalente auxiliar en Galones o Libras
+    function obtenerConversionVisual(cantidad, unidadOriginal) {
+        const u = unidadOriginal.toLowerCase();
+        if (u === "fl. oz" || u === "oz dry") {
             return ` (${ (cantidad / 128).toFixed(2) } gal)`;
-        } else if (unidadOriginal === "qt") {
+        } else if (u === "pt") {
+            return ` (${ (cantidad / 8).toFixed(2) } gal)`;
+        } else if (u === "qt") {
             return ` (${ (cantidad / 4).toFixed(2) } gal)`;
+        } else if (u === "ml") {
+            return ` (${ (cantidad / 3785.41).toFixed(2) } gal)`;
+        } else if (u === "l") {
+            return ` (${ (cantidad / 3.78541).toFixed(2) } gal)`;
+        } else if (u === "g") {
+            return ` (${ (cantidad / 453.592).toFixed(2) } lbs)`;
+        } else if (u === "kg") {
+            return ` (${ (cantidad * 2.20462).toFixed(2) } lbs)`;
         }
         return '';
     }
@@ -524,14 +545,16 @@
             if(!nombre || isNaN(dosis)) return;
 
             let cantLleno = 0;
-            if(unidad.includes("acre")) {
+            // Detectar si la unidad es por Acre o fija por cada 100 Galones
+            if(unidad.includes("/Ac") || unidad.includes(" dry")) {
                 cantLleno = dosis * acresPorTanque;
-            } else if(unidad.includes("100gal")) {
+            } else if(unidad.includes("/100") || unidad.includes("100")) {
                 cantLleno = dosis * (tanque / 100);
             }
 
-            let unidadBase = unidad.split('/')[0];
-            let stringGalones = obtenerConversionAGalones(cantLleno, unidadBase);
+            // Limpieza visual del nombre de la unidad base (ej: "fl. Oz/Ac" -> "fl. Oz")
+            let unidadBase = unidad.split('/')[0].replace(' dry', '');
+            let stringGalones = obtenerConversionVisual(cantLleno, unidadBase);
 
             ulLleno.innerHTML += `<li><b>${nombre}:</b> ${cantLleno.toFixed(2)} ${unidadBase}<span class="converted-gal">${stringGalones}</span> <span class="original-dose">(${dosis} ${unidad})</span></li>`;
             
@@ -553,13 +576,13 @@
 
         calculadoLlenoGlobal.forEach(p => {
             let cantParcial = 0;
-            if(p.unidad.includes("acre")) {
+            if(p.unidad.includes("/Ac") || p.unidad.includes(" dry")) {
                 cantParcial = p.dosis * acresAjustados;
-            } else if(p.unidad.includes("100gal")) {
+            } else if(p.unidad.includes("/100") || p.unidad.includes("100")) {
                 cantParcial = p.dosis * (aguaManual / 100);
             }
             
-            let stringGalones = obtenerConversionAGalones(cantParcial, p.unidadBase);
+            let stringGalones = obtenerConversionVisual(cantParcial, p.unidadBase);
             ulParcial.innerHTML += `<li><b>${p.nombre}:</b> ${cantParcial.toFixed(2)} ${p.unidadBase}<span class="converted-gal">${stringGalones}</span></li>`;
             
             calculadoParcialGlobal.push({ nombre: p.nombre, cantParcial, unidadBase: p.unidadBase, stringGalones });
@@ -630,8 +653,6 @@
     }
 
     window.onload = function() {
-        // Cargar historial de forma segura
-        historial = JSON.parse(localStorage.getItem('agro_historial_html')) || [];
         cargarEstadoGuardado();
     };
 </script>
