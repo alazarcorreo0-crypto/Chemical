@@ -82,6 +82,34 @@
             color: white;
         }
 
+        /* Estilos específicos para las sub-pestañas de Recetas */
+        .recipe-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            background: #1a1a1a;
+            padding: 5px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .recipe-tab-btn {
+            flex: 1;
+            padding: 8px;
+            background: #252525;
+            border: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .recipe-tab-btn.active {
+            background: var(--accent);
+            color: black;
+            font-weight: bold;
+        }
+
         .panel { display: none; }
         .panel.active { display: block; }
 
@@ -245,6 +273,13 @@
     </div>
 
     <div id="panel-mezcla" class="panel active">
+        <!-- Selector de Recetas Pregrabadas -->
+        <div class="recipe-tabs">
+            <button class="recipe-tab-btn active" id="btn-receta-1" onclick="switchRecipe(1)">Receta 1</button>
+            <button class="recipe-tab-btn" id="btn-receta-2" onclick="switchRecipe(2)">Receta 2</button>
+            <button class="recipe-tab-btn" id="btn-receta-3" onclick="switchRecipe(3)">Receta 3</button>
+        </div>
+
         <div class="card">
             <h2>1. Datos del Lote</h2>
             <div class="form-group">
@@ -331,6 +366,9 @@
 <script>
     let bodega = JSON.parse(localStorage.getItem('agro_bodega')) || ["Ammonium Sulfate", "ENVY", "Callisto", "Crop Oil Conc", "Outlook", "Request", "Induce", "AIM EC", "Resolve Q"];
     let historial = JSON.parse(localStorage.getItem('agro_historial_html')) || [];
+    
+    // Control de la receta activa por defecto
+    let recetaActiva = parseInt(localStorage.getItem('agro_receta_activa')) || 1;
 
     // Lista idéntica a la pantalla del QuickDraw Spray Tender System
     const unidades = [
@@ -349,6 +387,18 @@
         }
         if(tabId === 'bodega') renderBodega();
         if(tabId === 'historial') renderHistorial();
+    }
+
+    // Cambiar de Receta (Pestaña 1, 2 o 3)
+    function switchRecipe(numeroReceta) {
+        recetaActiva = numeroReceta;
+        localStorage.setItem('agro_receta_activa', recetaActiva);
+        
+        document.querySelectorAll('.recipe-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-receta-' + numeroReceta).classList.add('active');
+        
+        document.getElementById('resultados').style.display = 'none';
+        cargarEstadoGuardado();
     }
 
     function renderBodega() {
@@ -430,14 +480,19 @@
             }
         });
 
-        localStorage.setItem('agro_cache_mezcla', JSON.stringify(estado));
+        // Guarda usando una clave dinámica de acuerdo a la receta activa
+        localStorage.setItem('agro_cache_mezcla_receta_' + recetaActiva, JSON.stringify(estado));
     }
 
     function cargarEstadoGuardado() {
-        const cache = JSON.parse(localStorage.getItem('agro_cache_mezcla'));
+        const cache = JSON.parse(localStorage.getItem('agro_cache_mezcla_receta_' + recetaActiva));
         document.getElementById('lista-productos-mezcla').innerHTML = '';
         
         if(!cache) {
+            document.getElementById('lote-acres').value = '';
+            document.getElementById('tanque-gal').value = '';
+            document.getElementById('gasto-acre').value = '';
+            document.getElementById('lote-notes').value = '';
             agregarFilaProducto();
             return;
         }
@@ -456,8 +511,8 @@
     }
 
     function resetFormulario() {
-        if(confirm("¿Seguro que quieres borrar los datos de la pantalla actual?")) {
-            localStorage.removeItem('agro_cache_mezcla');
+        if(confirm("¿Seguro que quieres borrar los datos de la receta " + recetaActiva + "?")) {
+            localStorage.removeItem('agro_cache_mezcla_receta_' + recetaActiva);
             document.getElementById('lote-acres').value = '';
             document.getElementById('tanque-gal').value = '';
             document.getElementById('gasto-acre').value = '';
@@ -517,7 +572,7 @@
         resumenGeneralGlobal = `Cargas: ${tanquesNecesarios.toFixed(2)} (${tanquesLlenosEnteros} llenos, residual para ${acresRestantes.toFixed(2)} ac). Gasto: ${gasto} gal/ac.`;
 
         let genHTML = `
-            <p>• Un tanque lleno cubre: <b>${acresPorTanque.toFixed(2)} acres</b></p>
+            <p>• Un tanque lleno covers: <b>${acresPorTanque.toFixed(2)} acres</b></p>
             <p>• Cargas necesarias: <b>${tanquesNecesarios.toFixed(2)} tanques</b></p>
             <p>• Esto equivale a: <b>${tanquesLlenosEnteros} tanque(s) lleno(s)</b></p>
         `;
@@ -614,7 +669,7 @@
         const registroHTML = `
             <div class="history-item">
                 <div class="history-header">
-                    <span class="history-title">🚜 Lote de ${acres} ac (${tanque} gal)</span>
+                    <span class="history-title">🚜 Lote de ${acres} ac (${tanque} gal) - Receta ${recetaActiva}</span>
                     <span class="history-date">${fecha}</span>
                 </div>
                 <div style="font-size:13px; color:#bbb; font-style:italic;">${resumenGeneralGlobal}</div>
@@ -629,7 +684,7 @@
 
         historial.unshift(registroHTML);
         localStorage.setItem('agro_historial_html', JSON.stringify(historial));
-        alert("¡Receta guardada con éxito!");
+        alert("¡Receta guardada con éxito en el Historial!");
     }
 
     function renderHistorial() {
@@ -653,6 +708,9 @@
     }
 
     window.onload = function() {
+        // Al iniciar, activa la última pestaña de receta usada y renderiza sus datos
+        document.querySelectorAll('.recipe-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-receta-' + recetaActiva).classList.add('active');
         cargarEstadoGuardado();
     };
 </script>
